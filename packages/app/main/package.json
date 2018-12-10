@@ -4,7 +4,7 @@
   "version": "4.1.0",
   "private": true,
   "description": "Development tool for the Microsoft Bot Framework. Allows developers to test and debug bots on localhost.",
-  "main": "./app/server/main.js",
+  "main": "./app/server/cli.js",
   "homepage": "https://github.com/Microsoft/BotFramework-Emulator",
   "scripts": {
     "build": "run-s lint build:electron",
