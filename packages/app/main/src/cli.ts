@@ -33,6 +33,7 @@
 
 import { spawn } from 'child_process';
 import { join } from 'path';
+import { openSync } from 'fs-extra';
 
 const startEmulator = () => {
   const args = process.argv || [];
@@ -43,22 +44,34 @@ const startEmulator = () => {
     return;
   }
 
+  // path to electron exe
   const electronPath = args[0];
+  // path to app entry point
   const main = join(__dirname, 'main.js');
-  // console.log('DIRNAME: ', __dirname);
-  // console.log('CWD: ', process.cwd());
+  // pass args to app (prune '.' from end; will be replaced with path to entry point)
+  const argsToPass = args.slice(1, args.length - 1);
+  console.log('args to pass: ', argsToPass);
+
+  console.log('DIRNAME: ', __dirname);
+  console.log('CWD: ', process.cwd());
+
+  const out = openSync(join(process.cwd(), './out.log'), 'a');
+  const err = openSync(join(process.cwd(), './err.log'), 'a');
   
-  // console.log('spawning sub process');
+  console.log('spawning sub process');
   const child = spawn(
     electronPath,
-    [...args.slice(1, args.length - 1), main],
+    [
+      ...argsToPass,
+      main
+    ],
     {
       detached: true,
-      stdio: 'ignore'
+      stdio: ['ignore', out, err]
     }
   );
   child.unref();
-  // console.log('should now be running in detached mode');
+  console.log('should now be running in detached mode');
 };
 
 startEmulator();

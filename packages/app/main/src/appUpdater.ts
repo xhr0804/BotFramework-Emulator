@@ -141,7 +141,7 @@ export const AppUpdater = new class extends EventEmitter {
     });
 
     if (this.autoDownload) {
-      this.checkForUpdates(false);
+      this.checkForUpdates(false).catch(err => console.error(err));
     }
   }
 
