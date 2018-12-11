@@ -46,17 +46,19 @@ const startEmulator = () => {
 
   // path to electron exe
   const electronPath = args[0];
+  console.log('ELECTRON PATH: ', electronPath);
   // path to app entry point
   const main = join(__dirname, 'main.js');
+  console.log('MAIN PATH: ', main);
   // pass args to app (prune '.' from end; will be replaced with path to entry point)
-  const argsToPass = args.slice(1, args.length - 1);
+  const argsToPass = args.slice(1, args.length - 1) || [];
   console.log('args to pass: ', argsToPass);
 
   console.log('DIRNAME: ', __dirname);
   console.log('CWD: ', process.cwd());
 
-  const out = openSync(join(process.cwd(), './out.log'), 'a');
-  const err = openSync(join(process.cwd(), './err.log'), 'a');
+  // const out = openSync(join(process.cwd(), './out.log'), 'a');
+  // const err = openSync(join(process.cwd(), './err.log'), 'a');
   
   console.log('spawning sub process');
   const child = spawn(
@@ -67,7 +69,7 @@ const startEmulator = () => {
     ],
     {
       detached: true,
-      stdio: ['ignore', out, err]
+      stdio: 'ignore' // ['ignore', out, err]
     }
   );
   child.unref();
