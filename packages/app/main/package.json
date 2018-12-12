@@ -6,6 +6,9 @@
   "description": "Development tool for the Microsoft Bot Framework. Allows developers to test and debug bots on localhost.",
   "main": "./app/server/cli.js",
   "homepage": "https://github.com/Microsoft/BotFramework-Emulator",
+  "config": {
+    "running_from_source": true
+  },
   "scripts": {
     "build": "run-s lint build:electron",
     "build:electron": "babel ./src --out-dir app/server --extensions \".ts,.tsx\" --ignore \"**/*.spec.ts\" && npm run copy:extension:stubs",
@@ -17,7 +20,8 @@
     "start:electron": "./node_modules/.bin/electron --inspect=7777 --remote-debugging-port=7778 .",
     "start:electron:dev": "cross-env ELECTRON_TARGET_URL=http://localhost:3000/ npm run start:electron",
     "start:react-app": "cd ../client && npm start",
-    "test": "jest"
+    "test": "jest",
+    "meow": "node ./app/server/cli.js"
   },
   "keywords": [
     "microsoft",
@@ -170,7 +174,8 @@
     ],
     "asarUnpack": [
       "app/extensions/**",
-      "node_modules/@bfemulator/extension-*/**"
+      "node_modules/@bfemulator/extension-*/**",
+      "app/server/**"
     ],
     "directories": {
       "buildResources": "./scripts/config/resources"
