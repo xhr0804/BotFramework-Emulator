@@ -37,130 +37,33 @@ import { openSync } from 'fs-extra';
 
 const launchDetachedEmulator = () => {
   const args = process.argv || [];
-  // path to electron exe
-  const electronPath = args[0];
-  // path to spawn script
-  const spawner = join(__dirname, 'spawnMain.js');
-  
-  // pass along args
-  const argsToPass = args.slice(1);
-  console.log('args to pass: ', argsToPass);
-
-  console.log('spawning spawner');
-  spawn(
-    spawner,
-    argsToPass,
-    {
-      detached: false,
-      stdio: 'inherit',
-      env: {
-        ELECTRON_RUN_AS_NODE: true
-      }
-    }
-  );
-};
-
-launchDetachedEmulator();
-
-/*
-const launchDetachedEmulator = () => {
-  console.log('process exec path: ', process.execPath);
-  // console.log(process);
-  const runningFromSource = process.env.npm_package_config_running_from_source;
-  if (runningFromSource) {
-    console.log('Running from source.');
-    launchDetachedFromSource();
-  } else {
-    console.log('Running from packaged version.');
-    launchDetachedFromPackage();
-  }
-};
-
-const launchDetachedFromPackage = () => {
-  const args = process.argv || [];
-  // path to electron exe
-  const electronPath = args[0];
-  console.log('ELECTRON PATH: ', electronPath);
-  // path to app entry point
-  const main = join(__dirname, 'main.js');
-  console.log('MAIN PATH: ', main);
-  // pass args to app (prune '.' from end; will be replaced with path to entry point)
-  const argsToPass = args.slice(1);
-  console.log('args to pass: ', argsToPass);
-
-  console.log('DIRNAME: ', __dirname);
-  console.log('CWD: ', process.cwd());
-
-  // console.log('spawning child');
-  // const child = spawn(
-  //   electronPath,
-  //   [main],
-  //   {
-  //     detached: false,
-  //     stdio: 'inherit',
-  //     env: {
-  //       launch_detached: '1'
-  //     }
-  //   }
-  // );
-  // child.unref();
-
-  // const out = openSync(join(process.cwd(), './out.log'), 'a');
-  // const err = openSync(join(process.cwd(), './err.log'), 'a');
-  
-  // console.log('spawning sub process');
-  // const child = spawn(
-  //   electronPath,
-  //   [
-  //     ...argsToPass,
-  //     main
-  //   ],
-  //   {
-  //     detached: true,
-  //     stdio: 'ignore' // ['ignore', out, err]
-  //   }
-  // );
-  // child.unref();
-  // console.log('should now be running in detached mode');
-};
-
-const launchDetachedFromSource = () => {
-  const args = process.argv || [];
-  console.log('got args: ', args);
 
   if (!args[0]) {
-    console.log('no args');
     return;
   }
 
+  // we want to start the electron app and not run it as a node script
+  delete process.env.ELECTRON_RUN_AS_NODE;
+
   // path to electron exe
   const electronPath = args[0];
-  console.log('ELECTRON PATH: ', electronPath);
-  // path to app entry point
-  const main = join(__dirname, 'main.js');
-  console.log('MAIN PATH: ', main);
-  // pass args to app (prune '.' from end; will be replaced with path to entry point)
-  const argsToPass = args.slice(1, args.length - 1) || [];
-  console.log('args to pass: ', argsToPass);
-
-  console.log('DIRNAME: ', __dirname);
-  console.log('CWD: ', process.cwd());
   
-  console.log('spawning sub process');
+  // pass args through to app
+  const argsToPass = args.slice(1) || [];
+
+  const stdOut = openSync(join(process.cwd(), 'out_log.txt'), 'a');
+  const stdErr = openSync(join(process.cwd(), 'err_log.txt'), 'a');
+  
+  // spawn the detached electron app process
   const child = spawn(
     electronPath,
-    [
-      ...argsToPass,
-      main
-    ],
+    argsToPass,
     {
       detached: true,
-      stdio: 'ignore'
-    }
+      stdio: ['ignore', stdOut, stdErr]
+    },
   );
   child.unref();
-  console.log('should now be running in detached mode');
 };
 
 launchDetachedEmulator();
-*/
