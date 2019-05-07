@@ -158,19 +158,24 @@ export function* newChat(action: ChatAction<NewChatPayload>): Iterable<any> {
   // If an existing factory is found, refresh the token
   const existingFactory: string = yield select(getWebSpeechFactoryForDocumentId, documentId);
   const { GetSpeechToken: command } = SharedConstants.Commands.Emulator;
-  const token = yield call(
-    [CommandServiceImpl, CommandServiceImpl.remoteCall],
-    command,
-    endpoint.id,
-    !!existingFactory
-  );
-  if (token) {
-    const factory = yield call(createCognitiveServicesBingSpeechPonyfillFactory, {
-      authorizationToken: token,
-    });
-    yield put(webSpeechFactoryUpdated(documentId, factory)); // Provide the new factory to the store
+  try {
+    const token = yield call(
+      [CommandServiceImpl, CommandServiceImpl.remoteCall],
+      command,
+      endpoint.id,
+      !!existingFactory
+    );
+    if (token) {
+      const factory = yield call(createCognitiveServicesBingSpeechPonyfillFactory, {
+        authorizationToken: token,
+      });
+      yield put(webSpeechFactoryUpdated(documentId, factory)); // Provide the new factory to the store
+    } else {
+      yield put(updatePendingSpeechTokenRetrieval(false));
+    }
+  } catch (e) {
+    yield put(updatePendingSpeechTokenRetrieval(false));
   }
-  yield put(updatePendingSpeechTokenRetrieval(false));
 }
 
 export function* diffWithPreviousBotState(currentBotState: Activity): Iterable<any> {
