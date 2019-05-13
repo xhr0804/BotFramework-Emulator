@@ -158,29 +158,6 @@ describe('AppUpdater', () => {
     AppUpdater.checkForUpdates = tmp;
   });
 
-  it('should startup and not check for updates if autoUpdate is false ', () => {
-    mockSettings.usePrereleases = true;
-    mockSettings.autoUpdate = false;
-
-    const mockOn = jest.fn((_eventName: string, _handler: () => any) => null);
-    const mockSetFeedURL = jest.fn((_options: any) => null);
-    mockAutoUpdater.on = mockOn;
-    mockAutoUpdater.setFeedURL = mockSetFeedURL;
-
-    const tmp = AppUpdater.checkForUpdates;
-    const mockCheckForUpdates = jest.fn(_ => Promise.resolve(true));
-    AppUpdater.checkForUpdates = mockCheckForUpdates;
-
-    AppUpdater.startup();
-
-    expect(AppUpdater.autoDownload).toBe(false);
-    expect(AppUpdater.allowPrerelease).toBe(true);
-
-    expect(mockCheckForUpdates).not.toHaveBeenCalled();
-
-    AppUpdater.checkForUpdates = tmp;
-  });
-
   it('should check for updates from the stable release repo', async () => {
     const mockSetFeedURL = jest.fn((_options: any) => null);
     const mockCheckForUpdates = jest.fn(() => Promise.resolve());

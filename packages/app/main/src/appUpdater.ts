@@ -110,11 +110,11 @@ class EmulatorUpdater extends EventEmitter {
     });
     electronUpdater.on('update-available', (updateInfo: UpdateInfo) => {
       if (!this.autoDownload) {
+        // show the update available dialog
         this._status = UpdateStatus.Idle;
         this.emit('update-available', updateInfo);
-      }
-      // if this was initiated on startup, download in the background
-      if (!this.userInitiated) {
+      } else {
+        // download the update silently and update on app quit
         this.downloadUpdate(false).catch(e => this.emit('error', e, e.toString()));
       }
     });
@@ -146,9 +146,7 @@ class EmulatorUpdater extends EventEmitter {
       }
     });
 
-    if (this.autoDownload) {
-      this.checkForUpdates(false);
-    }
+    this.checkForUpdates(false);
   }
 
   public async checkForUpdates(userInitiated: boolean): Promise<void> {

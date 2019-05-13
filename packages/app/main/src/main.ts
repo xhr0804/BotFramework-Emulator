@@ -60,6 +60,7 @@ import { sendNotificationToClient } from './utils/sendNotificationToClient';
 import { WindowManager } from './windowManager';
 import { ProtocolHandler } from './protocolHandler';
 import { setOpenUrl } from './data/actions/protocolActions';
+import { setFramework } from './settingsData/actions/frameworkActions';
 
 export let mainWindow: Window;
 export let windowManager: WindowManager;
@@ -88,20 +89,54 @@ if (app) {
 AppUpdater.on('update-available', async (update: UpdateInfo) => {
   try {
     AppMenuBuilder.refreshAppUpdateMenu();
+    // show the update available dialog
+    const { ShowUpdateAvailableDialog, ShowProgressIndicator, UpdateProgressIndicator } = SharedConstants.Commands.UI;
+    const result = await mainWindow.commandService.remoteCall(ShowUpdateAvailableDialog, update.version);
 
-    if (AppUpdater.userInitiated) {
-      const { ShowUpdateAvailableDialog, ShowProgressIndicator, UpdateProgressIndicator } = SharedConstants.Commands.UI;
-      const result = await mainWindow.commandService.remoteCall(ShowUpdateAvailableDialog, update.version);
-      if (result) {
+    switch (result) {
+      // manually download the update, and the user can choose to install afterwards
+      case 0:
         // show but don't block on result of progress indicator dialog
         await mainWindow.commandService.remoteCall(UpdateProgressIndicator, {
           label: 'Downloading...',
           progress: 0,
         });
         mainWindow.commandService.remoteCall(ShowProgressIndicator);
-        const { installAfterDownload = false } = result;
-        await AppUpdater.downloadUpdate(installAfterDownload);
-      }
+        await AppUpdater.downloadUpdate(false);
+        return;
+
+      // install the update and restart the emulator
+      case 1:
+        // show but don't block on result of progress indicator dialog
+        await mainWindow.commandService.remoteCall(UpdateProgressIndicator, {
+          label: 'Downloading...',
+          progress: 0,
+        });
+        mainWindow.commandService.remoteCall(ShowProgressIndicator);
+        await AppUpdater.downloadUpdate(true);
+        return;
+
+      // install the update, restart, and enable auto updates from here on
+      case 2:
+        const settingsStore = getSettingsStore();
+        let settings = settingsStore.getState().framework;
+        settings = {
+          ...settings,
+          autoUpdate: true,
+        };
+        settingsStore.dispatch(setFramework(settings));
+        // show but don't block on result of progress indicator dialog
+        await mainWindow.commandService.remoteCall(UpdateProgressIndicator, {
+          label: 'Downloading...',
+          progress: 0,
+        });
+        mainWindow.commandService.remoteCall(ShowProgressIndicator);
+        await AppUpdater.downloadUpdate(true);
+        return;
+
+      // cancel
+      default:
+        return;
     }
   } catch (e) {
     // eslint-disable-next-line no-console
@@ -114,29 +149,28 @@ AppUpdater.on('update-downloaded', async (update: UpdateInfo) => {
     AppMenuBuilder.refreshAppUpdateMenu();
 
     // TODO - localization
-    if (AppUpdater.userInitiated) {
-      // update the progress indicator
-      const { UpdateProgressIndicator } = SharedConstants.Commands.UI;
-      const progressPayload = { label: 'Download finished.', progress: 100 };
-      await mainWindow.commandService.remoteCall(UpdateProgressIndicator, progressPayload);
 
-      // send a notification when the update is finished downloading
-      const notification = newNotification(
-        `Emulator version ${update.version} has finished downloading. Restart and update now?`
-      );
-      notification.addButton('Dismiss', () => {
-        const { Commands } = SharedConstants;
-        mainWindow.commandService.remoteCall(Commands.Notifications.Remove, notification.id);
-      });
-      notification.addButton('Restart', async () => {
-        try {
-          AppUpdater.quitAndInstall();
-        } catch (e) {
-          sendNotificationToClient(newNotification(e), mainWindow.commandService);
-        }
-      });
-      sendNotificationToClient(notification, mainWindow.commandService);
-    }
+    // update the progress indicator
+    const { UpdateProgressIndicator } = SharedConstants.Commands.UI;
+    const progressPayload = { label: 'Download finished.', progress: 100 };
+    await mainWindow.commandService.remoteCall(UpdateProgressIndicator, progressPayload);
+
+    // send a notification when the update is finished downloading
+    const notification = newNotification(
+      `Emulator version ${update.version} has finished downloading. Restart and update now?`
+    );
+    notification.addButton('Dismiss', () => {
+      const { Commands } = SharedConstants;
+      mainWindow.commandService.remoteCall(Commands.Notifications.Remove, notification.id);
+    });
+    notification.addButton('Restart', async () => {
+      try {
+        AppUpdater.quitAndInstall();
+      } catch (e) {
+        sendNotificationToClient(newNotification(e), mainWindow.commandService);
+      }
+    });
+    sendNotificationToClient(notification, mainWindow.commandService);
   } catch (e) {
     // eslint-disable-next-line no-console
     console.error(`An error occurred in the updater's "update-downloaded" event handler: ${e}`);
