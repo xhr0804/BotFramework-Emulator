@@ -31,24 +31,25 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-export interface Bot {
-  id?: string;
-  botId?: string;
-  botName?: string;
-  botUrl?: string;
-  locale?: string;
-  msaAppId?: string;
-  msaPassword?: string;
-}
+import { getPassword, setPassword } from 'keytar';
 
-/** Represents a recently-used bot that isn't currently loaded */
-export interface BotInfo {
-  /** Path to corresponding .bot file */
-  path?: string;
-  /** Display name of bot */
-  displayName?: string;
-  /** Path to .transcript files - defaults to ./transcripts */
-  transcriptsPath?: string;
-  /** Path to .chat files - defaults to ./dialogs */
-  chatsPath?: string;
+export class CredentialManager {
+  private static readonly serviceName = 'BotFramework-Emulator';
+
+  /**
+   * Fetches a password stored by the OS at index 'key'
+   * @param key key used to index password
+   */
+  public static getPassword(key: string): Promise<string> {
+    return getPassword(this.serviceName, key);
+  }
+
+  /**
+   * Stores a password in the OS at index 'key'
+   * @param key key used to index password
+   * @param password
+   */
+  public static setPassword(key: string, password: string): Promise<void> {
+    return setPassword(this.serviceName, key, password);
+  }
 }
